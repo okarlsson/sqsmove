@@ -6,7 +6,7 @@ const inquirer = require("inquirer");
 const pAll = require("p-all");
 const pDoWhilst = require("p-do-whilst");
 
-const sqs = new AWS.SQS();
+const sqs = new AWS.SQS({region: "eu-west-1"});
 const concurrency = process.env.concurrency ? process.env.concurrency : 10;
 
 async function run() {
@@ -43,9 +43,7 @@ async function run() {
       filterMessage(message, process.env.FILTER)
     );
     console.log(
-      `Filtered out ${parsedMessages.length} for ${
-        process.env.FILTER
-      }`
+      `Filtered out ${parsedMessages.length} for ${process.env.FILTER}`
     );
   }
 
@@ -161,12 +159,10 @@ function sqsSendMessage(url, message) {
   };
 
   return new Promise((resolve, reject) => {
-    resolve();
-    /*
     sqs.sendMessage(params, function(err, data) {
       if (err) reject(err);
       else resolve(data);
-    });*/
+    });
   });
 }
 
