@@ -26,7 +26,19 @@ output=json
 git clone git@github.com:okarlsson/sqsmove.git
 cd sqsmove
 npm install
-npm start
+node index
+```
+
+## Options
+
+Filter messages
+```
+node index -f string / --filter string
+```
+
+Concurrency - how many requests to sqs to run concurrently
+```
+node index -c 15 / --concurrency 15
 ```
 
 ## Todos
