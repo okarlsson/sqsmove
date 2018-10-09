@@ -1,13 +1,30 @@
 "use strict";
 
-require("dotenv").load();
+const stdio = require("stdio");
 const AWS = require("aws-sdk");
 const inquirer = require("inquirer");
 const pAll = require("p-all");
 const pDoWhilst = require("p-do-whilst");
 
-const sqs = new AWS.SQS({region: "eu-west-1"});
-const concurrency = process.env.concurrency ? process.env.concurrency : 10;
+const options = stdio.getopt({
+  concurrency: {
+    args: 1,
+    description: 'The level of concurrency used to process the messages',
+    key: 'c',
+    default: 10
+  },
+  filter: {
+    args: 1,
+    description: 'The text string that my message needs to contain',
+    key: 'f',
+    default: null
+  }
+});
+
+const sqs = new AWS.SQS({
+  region: "eu-west-1"
+});
+const concurrency = parseInt(options.concurrency);
 
 async function run() {
   var data = await listQueues().catch(err => {
@@ -24,7 +41,10 @@ async function run() {
     var tags = tagsResponse.Tags;
     var name = `url: ${value}, tags: ${tags ? JSON.stringify(tags) : "none"}`;
 
-    queues.push({ name: name, value: value });
+    queues.push({
+      name: name,
+      value: value
+    });
   }
 
   var response = await selectQueues(queues);
@@ -38,12 +58,12 @@ async function run() {
 
   var parsedMessages = parseMessages(messages);
 
-  if (process.env.FILTER) {
+  if (options.filter) {
     parsedMessages = parsedMessages.filter(message =>
-      filterMessage(message, process.env.FILTER)
+      filterMessage(message, options.filter)
     );
     console.log(
-      `Filtered out ${parsedMessages.length} for ${process.env.FILTER}`
+      `Filtered out ${parsedMessages.length} for ${options.filter}`
     );
   }
 
@@ -76,7 +96,9 @@ async function sendMessages(url, messages) {
           actions.push(() => sqsSendMessage(url, messages.pop()));
         }
 
-        return pAll(actions, { concurrency: concurrency }).then(results => {
+        return pAll(actions, {
+          concurrency
+        }).then(results => {
           count += results.length;
 
           process.stdout.clearLine();
@@ -108,7 +130,9 @@ async function getMessages(url) {
           actions.push(() => sqsRecieveMessage(url, visibilityTimeout));
         }
 
-        return pAll(actions, { concurrency: concurrency }).then(results => {
+        return pAll(actions, {
+          concurrency: concurrency
+        }).then(results => {
           for (var i = 0; i < results.length; i++) {
             var result = results[i];
 
@@ -134,12 +158,12 @@ async function getMessages(url) {
 
 function getNumMessagesInQueue(url) {
   var params = {
-    QueueUrl: url /* required */,
+    QueueUrl: url /* required */ ,
     AttributeNames: ["ApproximateNumberOfMessages"]
   };
 
   return new Promise((resolve, reject) => {
-    sqs.getQueueAttributes(params, function(err, data) {
+    sqs.getQueueAttributes(params, function (err, data) {
       if (err) reject(err);
       else resolve(data.Attributes.ApproximateNumberOfMessages);
     });
@@ -154,12 +178,12 @@ function calculateTimeout(totalCount) {
 function sqsSendMessage(url, message) {
   var params = {
     MessageBody: JSON.stringify(message),
-    QueueUrl: url /* required */,
+    QueueUrl: url /* required */ ,
     DelaySeconds: 0
   };
 
   return new Promise((resolve, reject) => {
-    sqs.sendMessage(params, function(err, data) {
+    sqs.sendMessage(params, function (err, data) {
       if (err) reject(err);
       else resolve(data);
     });
@@ -168,15 +192,15 @@ function sqsSendMessage(url, message) {
 
 function sqsRecieveMessage(url, timeout) {
   var params = {
-    QueueUrl: url /* required */,
+    QueueUrl: url /* required */ ,
     AttributeNames: ["ALL"],
-    MaxNumberOfMessages: 10 /* Max number of messages that sqs allows */,
+    MaxNumberOfMessages: 10 /* Max number of messages that sqs allows */ ,
     WaitTimeSeconds: 0,
     VisibilityTimeout: timeout
   };
 
   return new Promise((resolve, reject) => {
-    sqs.receiveMessage(params, function(err, data) {
+    sqs.receiveMessage(params, function (err, data) {
       if (err) reject(err);
       else resolve(data);
     });
@@ -184,8 +208,7 @@ function sqsRecieveMessage(url, timeout) {
 }
 
 function selectQueues(queues) {
-  const questions = [
-    {
+  const questions = [{
       type: "list",
       name: "fromQueue",
       message: "Choose the queue you want to move messages from",
@@ -217,7 +240,7 @@ async function getTags(queueUrl) {
       QueueUrl: queueUrl
     };
 
-    sqs.listQueueTags(params, function(err, data) {
+    sqs.listQueueTags(params, function (err, data) {
       if (err) reject(err);
       else resolve(data);
     });
@@ -226,7 +249,7 @@ async function getTags(queueUrl) {
 
 async function listQueues() {
   return new Promise((resolve, reject) => {
-    sqs.listQueues(null, function(err, data) {
+    sqs.listQueues(null, function (err, data) {
       if (err) reject(err);
       else resolve(data);
     });
