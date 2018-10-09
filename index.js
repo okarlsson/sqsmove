@@ -1,13 +1,30 @@
 "use strict";
 
-require("dotenv").load();
+const stdio = require("stdio");
 const AWS = require("aws-sdk");
 const inquirer = require("inquirer");
 const pAll = require("p-all");
 const pDoWhilst = require("p-do-whilst");
 
+const options = stdio.getopt(
+  {
+    concurrency: {
+      args: 1,
+      description: 'The level of concurrency used to process the messages',
+      key: 'c',
+      default: 10
+    },
+    FILTER: {
+      args: 1,
+      description: 'The text string that my message needs to contain',
+      key: 'f',
+      default: null
+    }
+  }
+);
+
 const sqs = new AWS.SQS({region: "eu-west-1"});
-const concurrency = process.env.concurrency ? process.env.concurrency : 10;
+const concurrency = options.concurrency;
 
 async function run() {
   var data = await listQueues().catch(err => {
@@ -38,12 +55,12 @@ async function run() {
 
   var parsedMessages = parseMessages(messages);
 
-  if (process.env.FILTER) {
+  if (options.FILTER) {
     parsedMessages = parsedMessages.filter(message =>
-      filterMessage(message, process.env.FILTER)
+      filterMessage(message, options.FILTER)
     );
     console.log(
-      `Filtered out ${parsedMessages.length} for ${process.env.FILTER}`
+      `Filtered out ${parsedMessages.length} for ${options.FILTER}`
     );
   }
 
@@ -76,7 +93,7 @@ async function sendMessages(url, messages) {
           actions.push(() => sqsSendMessage(url, messages.pop()));
         }
 
-        return pAll(actions, { concurrency: concurrency }).then(results => {
+        return pAll(actions, { concurrency }).then(results => {
           count += results.length;
 
           process.stdout.clearLine();

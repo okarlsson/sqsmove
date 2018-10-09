@@ -16,9 +16,9 @@
   "license": "MIT",
   "dependencies": {
     "aws-sdk": "^2.329.0",
-    "dotenv": "^6.0.0",
     "inquirer": "^6.2.0",
     "p-all": "^1.0.0",
-    "p-do-whilst": "^0.1.0"
+    "p-do-whilst": "^0.1.0",
+    "stdio": "^0.2.7"
   }
 }
