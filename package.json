@@ -1,0 +1,24 @@
+{
+  "name": "sqsmove",
+  "version": "1.0.0",
+  "description": "Move sqs messages from one queue to another",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "sqs",
+    "node",
+    "aws"
+  ],
+  "author": "Oskar Karlsson",
+  "license": "MIT",
+  "dependencies": {
+    "aws-sdk": "^2.329.0",
+    "dotenv": "^6.0.0",
+    "inquirer": "^6.2.0",
+    "p-all": "^1.0.0",
+    "p-do-whilst": "^0.1.0"
+  }
+}
